@@ -50,3 +50,35 @@ cd /var/www/airsoft && git pull
 ## Privacy note (hiding munkys.dev)
 - A subdomain (`game.munkys.dev`) or path (`munkys.dev/xxxx`) **still shows munkys.dev**.
 - To fully hide the association, point a **separate domain** at the same Lightsail IP and use it as `server_name`. The server can host both domains simultaneously.
+
+## Subdomain setup: airsoft.munkys.dev
+
+### 1. Get a static IP
+Lightsail console -> instance -> Networking -> Create static IP and attach it. Note the IP (e.g. `12.34.56.78`).
+
+### 2. Add a DNS record (at munkys.dev's DNS host)
+| Type | Name/Host | Value               | TTL |
+|------|-----------|---------------------|-----|
+| A    | airsoft   | <your-static-ip>    | 300 |
+
+- `Name` is just `airsoft` (panel appends `.munkys.dev`). Some panels want the full `airsoft.munkys.dev`.
+- Cloudflare: proxy ON = free HTTPS + hidden IP; or "DNS only" if using Certbot.
+- Propagation: a few minutes up to ~1 hour.
+
+### 3. Nginx server block
+Use `server_name airsoft.munkys.dev;` in `/etc/nginx/sites-available/airsoft` (see block above), then enable + reload.
+
+### 4. HTTPS
+```bash
+sudo certbot --nginx -d airsoft.munkys.dev
+```
+
+### 5. Firewall
+Lightsail Networking tab: ensure HTTP (80) and HTTPS (443) are open.
+
+### Verify DNS from your PC
+```powershell
+nslookup airsoft.munkys.dev
+```
+Should return your static IP once propagated.
+
